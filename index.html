@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Deepfake Detector | Sub-Band MoE & Frequency Attention</title>
+    <meta name="description" content="State-of-the-art Codec-Based Audio Deepfake Detection Workbench utilizing Top-2 Sparse Mixture-of-Experts and Cross-Frequency Attention.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for MoE Gating & Metrics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <div class="app-background">
+        <div class="glow-sphere sphere-1"></div>
+        <div class="glow-sphere sphere-2"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand-logo">
+                <div class="logo-icon"><i class="fa-solid => fa-shield-cat"></i><i class="fa-solid fa-wave-square"></i></div>
+                <div class="brand-text">
+                    <h1>AUDIO<span class="highlight">GUARD</span> AI</h1>
+                    <span class="sub-tag">Sub-Band MoE Codec Deepfake Detection</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="#workbench" class="nav-item active"><i class="fa-solid fa-microscope"></i> Detector Workbench</a>
+                <a href="#benchmark" class="nav-item"><i class="fa-solid fa-chart-line"></i> Multi-Codec Benchmarks</a>
+
+            </nav>
+            <div class="status-badge">
+                <span class="pulse-dot"></span> Model Active (PyTorch CUDA)
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+
+        <!-- Top Overview Hero Banner -->
+        <section class="hero-banner glass-panel">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h2>Detect Neural Speech Deepfakes in Real-Time</h2>
+                    <p>Powered by <strong>Top-2 Sparse Mixture-of-Experts (MoE)</strong>, <strong>Bin-Level Frequency Attention</strong>, and <strong>CFRQD Cross-Frequency Correlation</strong> to expose high-frequency quantization artifacts from EnCodec, DAC, SoundStream, and Lyra.</p>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <span class="stat-value">99.38%</span>
+                        <span class="stat-label">Model Accuracy</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">0.50%</span>
+                        <span class="stat-label">Equal Error Rate (EER)</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">0.9998</span>
+                        <span class="stat-label">ROC-AUC Score</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">16,000</span>
+                        <span class="stat-label">Scaled Training Samples</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Workbench Grid -->
+        <section id="workbench" class="workbench-grid">
+            
+            <!-- Left Column: Audio Input & Interactive Control Panel -->
+            <div class="panel-column left-column">
+                
+                <!-- Audio Input Box -->
+                <div class="glass-panel input-card">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-file-audio"></i> Audio Input & Recording</h3>
+                        <span class="info-tag">16 kHz / 3.0s Standardized</span>
+                    </div>
+
+                    <!-- Dropzone -->
+                    <div class="dropzone" id="audioDropzone">
+                        <input type="file" id="audioFileInput" accept="audio/*" hidden>
+                        <div class="dropzone-content">
+                            <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                            <p class="drop-title">Drag & Drop Audio File Here</p>
+                            <p class="drop-hint">Supports WAV, MP3, FLAC, OGG (Max 10MB)</p>
+                            <button class="btn btn-primary" onclick="document.getElementById('audioFileInput').click()">
+                                <i class="fa-solid fa-folder-open"></i> Browse File
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Microphone Recorder Controls -->
+                    <div class="recorder-controls">
+                        <button class="btn btn-danger" id="recordBtn">
+                            <i class="fa-solid fa-microphone"></i> Start Live Continuous Mic
+                        </button>
+                        <button class="btn btn-secondary hidden" id="stopRecordBtn">
+                            <i class="fa-solid fa-stop-circle"></i> Stop & Analyze Recording
+                        </button>
+                        <div class="rec-timer hidden" id="recTimer">
+                            <span class="rec-dot pulsing"></span> Live Mic: <span id="recSeconds">0.0s</span>
+                            <span class="segment-badge" id="liveChunkBadge">Chunk 1 Processing</span>
+                        </div>
+                    </div>
+
+                    <!-- Pre-loaded Demo Audio Gallery -->
+                    <div class="demo-gallery">
+                        <label class="section-subtitle"><i class="fa-solid fa-bolt"></i> Quick Demo Gallery (1-Click Evaluation):</label>
+                        <div class="demo-buttons">
+                            <button class="demo-btn genuine-btn" onclick="loadDemoSample('genuine')">
+                                <i class="fa-solid fa-circle-check"></i> Genuine Speech
+                            </button>
+                            <button class="demo-btn fake-btn" onclick="loadDemoSample('encodec')">
+                                <i class="fa-solid fa-robot"></i> EnCodec Fake
+                            </button>
+                            <button class="demo-btn fake-btn" onclick="loadDemoSample('dac')">
+                                <i class="fa-solid fa-robot"></i> DAC Fake
+                            </button>
+                            <button class="demo-btn fake-btn" onclick="loadDemoSample('soundstream')">
+                                <i class="fa-solid fa-robot"></i> SoundStream Fake
+                            </button>
+                            <button class="demo-btn fake-btn" onclick="loadDemoSample('lyra')">
+                                <i class="fa-solid fa-robot"></i> Lyra Fake
+                            </button>
+                            <button class="demo-btn stress-btn" onclick="loadDemoSample('mp3')">
+                                <i class="fa-solid fa-file-zipper"></i> MP3 64k Fake
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Robustness Stress Test Simulator -->
+                <div class="glass-panel stress-card">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-sliders"></i> Robustness Stress Test Simulator</h3>
+                        <span class="badge-mini">Real-Time Evaluation</span>
+                    </div>
+                    <p class="card-desc">Simulate severe acoustic environmental stress to test detection score stability under lossy MP3 compression and background noise.</p>
+                    
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span><i class="fa-solid fa-volume-xmark"></i> Background Noise (SNR)</span>
+                            <span class="slider-val" id="snrVal">20 dB</span>
+                        </div>
+                        <input type="range" id="snrSlider" min="5" max="40" value="20" step="1">
+                        <div class="slider-labels">
+                            <span>5 dB (Heavy Noise)</span>
+                            <span>40 dB (Clean Studio)</span>
+                        </div>
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span><i class="fa-solid fa-compress"></i> MP3 Compression Bitrate</span>
+                            <span class="slider-val" id="bitrateVal">128 kbps</span>
+                        </div>
+                        <input type="range" id="bitrateSlider" min="32" max="320" value="128" step="16">
+                        <div class="slider-labels">
+                            <span>32 kbps (Low Quality)</span>
+                            <span>320 kbps (Uncompressed)</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-secondary full-width" onclick="runStressTest()">
+                        <i class="fa-solid fa-flask"></i> Run Degradation Stress Test
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Visualizers, Detection Verdict & MoE Diagnostics -->
+            <div class="panel-column right-column">
+
+                <!-- Detection Verdict & Confidence Summary -->
+                <div class="glass-panel verdict-card" id="verdictCard">
+                    <div class="verdict-header">
+                        <div class="verdict-badge-box">
+                            <span class="verdict-title">DETECTION VERDICT</span>
+                            <div class="verdict-badge idle" id="verdictBadge">
+                                <i class="fa-solid fa-microphone-slash"></i> AWAITING AUDIO
+                            </div>
+                        </div>
+                        <div class="confidence-box">
+                            <span class="conf-label">Confidence Score</span>
+                            <span class="conf-value" id="confValue">0.00%</span>
+                        </div>
+                    </div>
+
+                    <!-- Class Probability Progress Bar -->
+                    <div class="probability-bars">
+                        <div class="prob-row">
+                            <span>Genuine (Real Speech)</span>
+                            <span id="realProbText">0.00%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill genuine-fill" id="realProbFill" style="width: 0%;"></div>
+                        </div>
+                        
+                        <div class="prob-row">
+                            <span>Codec-Fake (Spoofed Speech)</span>
+                            <span id="fakeProbText">0.00%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill fake-fill" id="fakeProbFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audio Waveform Scrubber & LFCC Spectrogram Canvas -->
+                <div class="glass-panel visualizer-card">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-chart-area"></i> Standardized Waveform & 60-Bin LFCC Spectrogram</h3>
+                        <div class="tab-pills">
+                            <button class="pill active" onclick="switchVisTab('waveform')">Waveform</button>
+                            <button class="pill" onclick="switchVisTab('lfcc')">60-Bin LFCC Heatmap</button>
+                        </div>
+                    </div>
+
+                    <div class="canvas-container">
+                        <canvas id="waveformCanvas" width="800" height="220"></canvas>
+                        <canvas id="lfccCanvas" width="800" height="220" class="hidden"></canvas>
+                    </div>
+                </div>
+
+                <!-- Second-by-Second Segment Timeline Card -->
+                <div class="glass-panel segments-card hidden" id="segmentsCard">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-timeline"></i> Timeline Segment Breakdown</h3>
+                        <span class="info-tag" id="segmentsTotalTag">1 Segment</span>
+                    </div>
+                    <div class="segments-grid" id="segmentsGrid">
+                        <!-- Dynamically populated segment pills -->
+                    </div>
+                </div>
+
+                <!-- MoE Expert Gating & Attention Inspector -->
+                <div class="glass-panel moe-card">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-network-wired"></i> MoE Router Diagnostics & Specialist Routing</h3>
+                        <span class="info-tag">Top-2 Sparse Active</span>
+                    </div>
+
+                    <div class="moe-content">
+                        <!-- Chart for Expert Gating Weights -->
+                        <div class="chart-wrapper">
+                            <canvas id="moeChart" height="180"></canvas>
+                        </div>
+
+                        <!-- Active Top-2 Expert Descriptions -->
+                        <div class="expert-list">
+                            <div class="expert-box" id="expert1Box">
+                                <div class="expert-head">
+                                    <span class="expert-tag">Expert 1</span>
+                                    <span class="expert-name">Low-Band Prosody Specialist</span>
+                                </div>
+                                <p class="expert-range">Bins 0–17 | Captures pitch track F0 & vowel formants.</p>
+                                <span class="weight-badge" id="exp1Weight">Weight: 0.0000</span>
+                            </div>
+
+                            <div class="expert-box" id="expert2Box">
+                                <div class="expert-head">
+                                    <span class="expert-tag">Expert 2</span>
+                                    <span class="expert-name">Mid-Band Vocoder Glitch Specialist</span>
+                                </div>
+                                <p class="expert-range">Bins 14–32 | Isolates mid-range acoustic phase shifts.</p>
+                                <span class="weight-badge" id="exp2Weight">Weight: 0.0000</span>
+                            </div>
+
+                            <div class="expert-box" id="expert3Box">
+                                <div class="expert-head">
+                                    <span class="expert-tag">Expert 3</span>
+                                    <span class="expert-name">High-Band RVQ Quantization Specialist</span>
+                                </div>
+                                <p class="expert-range">Bins 29–47 | Exposes neural codebook step noise.</p>
+                                <span class="weight-badge" id="exp3Weight">Weight: 0.0000</span>
+                            </div>
+
+                            <div class="expert-box" id="expert4Box">
+                                <div class="expert-head">
+                                    <span class="expert-tag">Expert 4</span>
+                                    <span class="expert-name">Ultra-High Aliasing Specialist</span>
+                                </div>
+                                <p class="expert-range">Bins 44–60 | Exposes Nyquist frequency edge artifacts.</p>
+                                <span class="weight-badge" id="exp4Weight">Weight: 0.0000</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Benchmark Section -->
+        <section id="benchmark" class="section-container">
+            <div class="section-title-box">
+                <h2><i class="fa-solid fa-ranking-star"></i> Multi-Codec Benchmark Results</h2>
+                <p>Performance metrics evaluated across 10,000 scaled multi-codec audio samples.</p>
+            </div>
+
+            <div class="benchmark-grid">
+                <div class="codec-bench-card glass-panel">
+                    <div class="codec-icon"><i class="fa-solid fa-cube"></i></div>
+                    <h3>EnCodec (Meta)</h3>
+                    <p class="codec-meta">24 kHz | 1.5 – 6.0 kbps</p>
+                    <div class="metric-row">
+                        <span>Equal Error Rate (EER)</span>
+                        <span class="metric-highlight">0.40%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Accuracy</span>
+                        <span class="metric-good">99.20%</span>
+                    </div>
+                </div>
+
+                <div class="codec-bench-card glass-panel">
+                    <div class="codec-icon"><i class="fa-solid fa-waveform"></i></div>
+                    <h3>SoundStream (Google)</h3>
+                    <p class="codec-meta">16 kHz | 3.0 – 12.0 kbps</p>
+                    <div class="metric-row">
+                        <span>Equal Error Rate (EER)</span>
+                        <span class="metric-highlight">1.99%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Accuracy</span>
+                        <span class="metric-good">97.40%</span>
+                    </div>
+                </div>
+
+                <div class="codec-bench-card glass-panel">
+                    <div class="codec-icon"><i class="fa-solid fa-sliders"></i></div>
+                    <h3>DAC (Descript Audio)</h3>
+                    <p class="codec-meta">44.1 kHz | 8.0 – 24.0 kbps</p>
+                    <div class="metric-row">
+                        <span>Equal Error Rate (EER)</span>
+                        <span class="metric-highlight">2.65%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Accuracy</span>
+                        <span class="metric-good">96.80%</span>
+                    </div>
+                </div>
+
+                <div class="codec-bench-card glass-panel">
+                    <div class="codec-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <h3>Lyra (Ultra Low-Bit)</h3>
+                    <p class="codec-meta">16 kHz | 3.2 kbps</p>
+                    <div class="metric-row">
+                        <span>Equal Error Rate (EER)</span>
+                        <span class="metric-highlight">4.50%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Accuracy</span>
+                        <span class="metric-good">95.10%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="app-footer">
+        <p>Audio Anti-Spoofing & Codec Deepfake Detection System | 22AIE450 Speech Processing Project Group D3</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
